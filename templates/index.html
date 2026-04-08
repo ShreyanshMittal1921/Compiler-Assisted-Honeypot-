@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honeypot — Compiler</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050507;--panel:#0c0c10;--border:#1a1a24;--border-hi:#2a2a3a;
+  --red:#ff2d55;--red-dim:rgba(255,45,85,0.1);
+  --amber:#ff9500;--blue:#0af;--green:#30d158;
+  --text:#e8e8f0;--muted:#44445a;
+  --mono:'Share Tech Mono',monospace;
+  --display:'Bebas Neue',sans-serif;
+  --body:'DM Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--body)}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(255,45,85,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,45,85,0.025) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);
+  pointer-events:none;z-index:0}
+
+/* ── NAV ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:56px;
+  border-bottom:1px solid var(--border);background:rgba(5,5,7,0.88);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:20}
+.nav-left{display:flex;align-items:center;gap:24px}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo{width:28px;height:28px;border:1px solid var(--red);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:14px;color:var(--red)}
+.nav-title{font-family:var(--display);font-size:18px;letter-spacing:0.1em;color:var(--text)}
+.nav-links{display:flex;gap:0}
+.nav-link{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--muted);
+  padding:6px 14px;border-radius:2px;cursor:pointer;transition:color 0.15s;text-decoration:none;
+  border:1px solid transparent}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--red);border-color:rgba(255,45,85,0.2);background:var(--red-dim)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-user{font-family:var(--mono);font-size:10px;color:var(--muted);
+  padding:4px 10px;border:1px solid var(--border);border-radius:2px}
+.nav-user span{color:var(--text)}
+.logout-btn{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--muted);
+  padding:5px 12px;border:1px solid var(--border);border-radius:2px;
+  background:transparent;cursor:pointer;transition:all 0.15s;text-decoration:none;display:flex;align-items:center;gap:5px}
+.logout-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+
+/* ── PAGE ── */
+.page{position:relative;z-index:1;min-height:calc(100vh - 56px);
+  display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.glow-orb{position:fixed;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,45,85,0.07) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;
+  animation:breathe 4s ease-in-out infinite;z-index:0}
+@keyframes breathe{0%,100%{opacity:0.6;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}}
+
+.card{width:440px;background:var(--panel);border:1px solid var(--border);border-radius:2px;
+  padding:0;position:relative;overflow:hidden;animation:cardIn 0.5s cubic-bezier(0.16,1,0.3,1) both;z-index:1}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.corner{position:absolute;width:10px;height:10px}
+.corner.tl{top:8px;left:8px;border-top:1px solid var(--red);border-left:1px solid var(--red)}
+.corner.tr{top:8px;right:8px;border-top:1px solid var(--red);border-right:1px solid var(--red)}
+.corner.bl{bottom:8px;left:8px;border-bottom:1px solid var(--red);border-left:1px solid var(--red)}
+.corner.br{bottom:8px;right:8px;border-bottom:1px solid var(--red);border-right:1px solid var(--red)}
+
+.card-header{padding:32px 36px 24px;border-bottom:1px solid var(--border)}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--red-dim);
+  border:1px solid rgba(255,45,85,0.2);border-radius:2px;padding:4px 10px;margin-bottom:14px}
+.badge-dot{width:5px;height:5px;background:var(--red);border-radius:50%;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.badge span{font-family:var(--mono);font-size:9px;color:var(--red);letter-spacing:0.1em}
+.card-title{font-family:var(--display);font-size:40px;line-height:1;letter-spacing:0.05em}
+.card-title em{color:var(--red);font-style:normal}
+.card-sub{margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.06em}
+
+.card-body{padding:28px 36px 32px}
+.field-label{font-family:var(--mono);font-size:9px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.file-drop{position:relative;border:1px dashed var(--border);border-radius:2px;
+  padding:28px 20px;text-align:center;cursor:pointer;
+  transition:border-color 0.2s,background 0.2s;background:rgba(255,255,255,0.01)}
+.file-drop:hover,.file-drop.dragover{border-color:var(--red);background:rgba(255,45,85,0.04)}
+.file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:26px;margin-bottom:10px;display:block;opacity:0.35}
+.drop-text{font-size:13px;color:var(--muted)}
+.drop-text strong{color:var(--red);font-weight:500}
+.file-name{margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--blue);min-height:16px}
+.progress-wrap{margin-top:12px;height:2px;background:var(--border);border-radius:2px;overflow:hidden;opacity:0;transition:opacity 0.3s}
+.progress-wrap.active{opacity:1}
+.progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--red),var(--amber));transition:width 0.4s ease;box-shadow:0 0 8px var(--red)}
+.btn-compile{margin-top:20px;width:100%;padding:14px;background:var(--red);color:#fff;border:none;
+  border-radius:2px;font-family:var(--display);font-size:20px;letter-spacing:0.1em;cursor:pointer;
+  position:relative;overflow:hidden;transition:background 0.2s,transform 0.1s}
+.btn-compile::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);
+  transform:translateX(-100%);transition:transform 0.4s}
+.btn-compile:hover{background:#e0273d;transform:translateY(-1px)}
+.btn-compile:hover::before{transform:translateX(100%)}
+.btn-compile:active{transform:translateY(0)}
+.btn-compile:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+
+.status-bar{margin-top:14px;display:flex;align-items:center;gap:8px;min-height:20px}
+.status-text{font-family:var(--mono);font-size:11px;color:var(--blue)}
+.spinner{display:none;width:10px;height:10px;border:1.5px solid rgba(0,170,255,0.2);
+  border-top-color:var(--blue);border-radius:50%;animation:spin 0.6s linear infinite}
+.status-bar.loading .spinner{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.card-footer{border-top:1px solid var(--border);padding:11px 36px;display:flex;justify-content:space-between}
+.footer-tag{font-family:var(--mono);font-size:9px;color:#252535;letter-spacing:0.08em}
+
+/* Quick nav links below card */
+.quick-nav{display:flex;gap:10px;margin-top:16px;justify-content:center;z-index:1;position:relative}
+.qn-btn{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;color:var(--muted);
+  padding:5px 14px;border:1px solid var(--border);border-radius:2px;
+  text-decoration:none;transition:all 0.15s}
+.qn-btn:hover{color:var(--text);border-color:var(--border-hi)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-left">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo">H</div>
+      <div class="nav-title">HONEYPOT</div>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link active" href="/">COMPILER</a>
+      <a class="nav-link" href="/dashboard">MONITOR</a>
+      <a class="nav-link" href="/analytics">ANALYTICS</a>
+      <a class="nav-link" href="/threat-map">THREAT MAP</a>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-user">OPERATOR: <span id="navUser">—</span></div>
+    <a class="logout-btn" href="/logout">⏻ SIGN OUT</a>
+  </div>
+</nav>
+
+<div class="glow-orb"></div>
+<div class="page">
+  <div>
+    <div class="card">
+      <div class="corner tl"></div><div class="corner tr"></div>
+      <div class="corner bl"></div><div class="corner br"></div>
+
+      <div class="card-header">
+        <div class="badge"><div class="badge-dot"></div><span>SYSTEM ACTIVE</span></div>
+        <div class="card-title">HONEYPOT<br><em>COMPILER</em></div>
+        <div class="card-sub">// DECEPTION-BASED SECURE COMPILATION ENGINE</div>
+      </div>
+
+      <div class="card-body">
+        <div class="field-label">// TARGET SOURCE FILE</div>
+        <div class="file-drop" id="dropZone">
+          <input type="file" id="fileInput" onchange="onFileSelect(this)">
+          <span class="drop-icon">⌁</span>
+          <div class="drop-text"><strong>Click to upload</strong> or drag & drop</div>
+          <div class="drop-text" style="font-size:11px;margin-top:4px">Any .py source file accepted</div>
+          <div class="file-name" id="fileName"></div>
+        </div>
+
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <button class="btn-compile" id="compileBtn" onclick="uploadFile()">COMPILE TARGET</button>
+
+        <div class="status-bar" id="statusBar">
+          <div class="spinner"></div>
+          <span class="status-text" id="status"></span>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span class="footer-tag">BUILD v2.4.1 — CLASSIFIED</span>
+        <span class="footer-tag">AES-256 WRAPPED</span>
+      </div>
+    </div>
+
+    <!-- QUICK NAV BELOW CARD -->
+    <div class="quick-nav">
+      <a class="qn-btn" href="/dashboard">→ VIEW MONITOR</a>
+      <a class="qn-btn" href="/analytics">→ ANALYTICS</a>
+      <a class="qn-btn" href="/threat-map">→ THREAT MAP</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// Load current user
+fetch('/whoami').then(r=>r.json()).then(d=>{
+  if(d.user) document.getElementById('navUser').textContent=d.user.toUpperCase();
+}).catch(()=>{});
+
+// Drag & drop
+const dropZone=document.getElementById('dropZone');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('dragover')});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop',e=>{
+  e.preventDefault();dropZone.classList.remove('dragover');
+  const f=e.dataTransfer.files[0];
+  if(f){document.getElementById('fileName').textContent='> '+f.name}
+});
+function onFileSelect(input){
+  if(input.files.length) document.getElementById('fileName').textContent='> '+input.files[0].name;
+}
+
+async function uploadFile(){
+  const fileInput=document.getElementById('fileInput');
+  const status=document.getElementById('status');
+  const statusBar=document.getElementById('statusBar');
+  const progressWrap=document.getElementById('progressWrap');
+  const progressBar=document.getElementById('progressBar');
+  const btn=document.getElementById('compileBtn');
+
+  if(!fileInput.files.length){
+    status.style.color='var(--amber)';
+    status.innerText='⚠ SELECT A TARGET FILE FIRST';return;
+  }
+
+  status.style.color='var(--blue)';
+  statusBar.classList.add('loading');
+  progressWrap.classList.add('active');
+  btn.disabled=true;
+
+  const steps=[
+    [10,'PARSING SOURCE...'],
+    [30,'INJECTING DECEPTION LAYER...'],
+    [55,'OBFUSCATING CALL GRAPH...'],
+    [75,'EMBEDDING HONEYPOT TRAPS...'],
+    [90,'FINALIZING BINARY...'],
+  ];
+  let i=0;
+  const tick=setInterval(()=>{
+    if(i<steps.length){progressBar.style.width=steps[i][0]+'%';status.innerText=steps[i][1];i++}
+  },350);
+
+  const formData=new FormData();
+  formData.append('file',fileInput.files[0]);
+
+  try{
+    const res=await fetch('/compile',{method:'POST',body:formData});
+    if(res.status===401){window.location.href='/login';return}
+    clearInterval(tick);
+    progressBar.style.width='100%';
+    statusBar.classList.remove('loading');
+    status.innerText='✓ COMPILATION COMPLETE — REDIRECTING TO DASHBOARD';
+    status.style.color='var(--green)';
+    setTimeout(()=>{window.location.href='/dashboard'},1000);
+  } catch(e){
+    clearInterval(tick);
+    statusBar.classList.remove('loading');
+    progressBar.style.background='var(--amber)';
+    status.innerText='⚠ CONNECTION FAILED';
+    status.style.color='var(--amber)';
+    btn.disabled=false;
+  }
+}
+</script>
+</body>
+</html>

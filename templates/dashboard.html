@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honeypot — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050507;--panel:#0c0c10;--panel2:#0f0f14;--border:#1a1a24;--border-hi:#2a2a3a;
+  --red:#ff2d55;--red-dim:rgba(255,45,85,0.1);
+  --amber:#ff9500;--amber-dim:rgba(255,149,0,0.1);
+  --blue:#0af;--blue-dim:rgba(0,170,255,0.08);
+  --green:#30d158;--text:#e8e8f0;--muted:#44445a;
+  --mono:'Share Tech Mono',monospace;--display:'Bebas Neue',sans-serif;--body:'DM Sans',sans-serif;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--body)}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(255,45,85,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,45,85,0.025) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);
+  pointer-events:none;z-index:0}
+body.stealth{--bg:#020204;--panel:#07070a;--panel2:#090909;--border:#111118;--border-hi:#1a1a22}
+body.stealth::before{opacity:0.3}
+.app{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:56px;
+  border-bottom:1px solid var(--border);background:rgba(5,5,7,0.88);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:20}
+.nav-left{display:flex;align-items:center;gap:20px}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo{width:28px;height:28px;border:1px solid var(--red);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:14px;color:var(--red)}
+.nav-title{font-family:var(--display);font-size:18px;letter-spacing:0.1em;color:var(--text)}
+.nav-links{display:flex;gap:0}
+.nav-link{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--muted);
+  padding:6px 14px;border-radius:2px;cursor:pointer;transition:color 0.15s;text-decoration:none;border:1px solid transparent}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--red);border-color:rgba(255,45,85,0.2);background:var(--red-dim)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-clock{font-family:var(--mono);font-size:11px;color:var(--muted);padding-right:10px;border-right:1px solid var(--border)}
+.nav-user{font-family:var(--mono);font-size:10px;color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:2px}
+.nav-user span{color:var(--text)}
+.stealth-btn{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--border);
+  border-radius:2px;padding:5px 12px;cursor:pointer;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--muted);transition:all 0.2s}
+.stealth-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:background 0.3s}
+body.stealth .stealth-dot{background:var(--green);box-shadow:0 0 8px var(--green)}
+body.stealth .stealth-btn{border-color:rgba(48,209,88,0.25);color:var(--green)}
+.export-btn{display:flex;align-items:center;gap:5px;background:var(--panel);border:1px solid var(--border);
+  border-radius:2px;padding:5px 12px;cursor:pointer;font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--muted);transition:all 0.2s}
+.export-btn:hover{border-color:var(--green);color:var(--green)}
+.logout-btn{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--muted);
+  padding:5px 12px;border:1px solid var(--border);border-radius:2px;
+  background:transparent;cursor:pointer;transition:all 0.15s;text-decoration:none;display:flex;align-items:center;gap:5px}
+.logout-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+
+/* MAIN */
+.main{flex:1;padding:24px 28px;max-width:1400px;width:100%;margin:0 auto}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;animation:fadeUp 0.5s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.page-title{font-family:var(--display);font-size:44px;line-height:1;letter-spacing:0.05em}
+.page-title em{color:var(--red);font-style:normal}
+.page-sub{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.1em;margin-top:6px}
+.live-chip{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:2px;padding:18px 20px;
+  position:relative;overflow:hidden;transition:border-color 0.2s;animation:fadeUp 0.5s ease both}
+.stat-card:nth-child(1){animation-delay:0.05s}.stat-card:nth-child(2){animation-delay:0.10s}
+.stat-card:nth-child(3){animation-delay:0.15s}.stat-card:nth-child(4){animation-delay:0.20s}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+.stat-card.red::before{background:var(--red)}.stat-card.amber::before{background:var(--amber)}
+.stat-card.blue::before{background:var(--blue)}.stat-card.green::before{background:var(--green)}
+.stat-card:hover{border-color:var(--border-hi)}
+.stat-label{font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.stat-value{font-family:var(--display);font-size:42px;line-height:1;letter-spacing:0.03em;transition:all 0.3s}
+.stat-card.red .stat-value{color:var(--red)}.stat-card.amber .stat-value{color:var(--amber)}
+.stat-card.blue .stat-value{color:var(--blue)}.stat-card.green .stat-value{color:var(--green)}
+.stat-delta{margin-top:6px;font-family:var(--mono);font-size:9px;color:var(--muted)}
+
+/* TABLE */
+.table-panel{background:var(--panel);border:1px solid var(--border);border-radius:2px;overflow:hidden;animation:fadeUp 0.5s 0.25s ease both}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--border);background:var(--panel2)}
+.table-title{font-family:var(--display);font-size:15px;letter-spacing:0.1em}
+.table-controls{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.pill{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;padding:4px 10px;border-radius:2px;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:all 0.15s;background:transparent}
+.pill.active,.pill:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+.clear-btn{font-family:var(--mono);font-size:9px;letter-spacing:0.08em;padding:4px 10px;border-radius:2px;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:transparent;transition:all 0.15s}
+.clear-btn:hover{border-color:var(--amber);color:var(--amber)}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1px solid var(--border)}
+thead th{padding:10px 22px;font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-align:left;text-transform:uppercase;font-weight:400}
+tbody tr{border-bottom:1px solid rgba(26,26,36,0.5);transition:background 0.15s;cursor:pointer}
+tbody tr:hover{background:rgba(255,45,85,0.03)}
+tbody tr:last-child{border-bottom:none}
+td{padding:11px 22px;font-size:13px}
+.td-time{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.td-input{font-family:var(--mono);font-size:11px;color:var(--text);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.type-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:2px;font-family:var(--mono);font-size:9px;letter-spacing:0.08em;white-space:nowrap}
+.type-badge.sql{background:var(--red-dim);border:1px solid rgba(255,45,85,0.2);color:var(--red)}
+.type-badge.path{background:var(--amber-dim);border:1px solid rgba(255,149,0,0.2);color:var(--amber)}
+.type-badge.sus{background:var(--blue-dim);border:1px solid rgba(0,170,255,0.2);color:var(--blue)}
+.type-badge::before{content:'';width:4px;height:4px;border-radius:50%;background:currentColor}
+.td-ip{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.severity-wrap{display:flex;align-items:center;gap:8px}
+.severity-bar{flex:1;max-width:70px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.severity-fill{height:100%;border-radius:2px}
+.severity-fill.high{background:var(--red);width:90%}.severity-fill.med{background:var(--amber);width:55%}.severity-fill.low{background:var(--blue);width:25%}
+.severity-label{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.action-icon{font-size:13px;opacity:0.3;transition:opacity 0.15s}
+tbody tr:hover .action-icon{opacity:0.8}
+@keyframes rowIn{from{opacity:0;background:rgba(255,45,85,0.07)}to{opacity:1;background:transparent}}
+.row-new{animation:rowIn 1.2s ease forwards}
+.empty-state{padding:50px 24px;text-align:center}
+.empty-state .icon{font-size:28px;opacity:0.15;margin-bottom:10px}
+.empty-state p{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:0.08em}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(2,2,4,0.85);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;backdrop-filter:blur(4px)}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{width:600px;max-width:95vw;background:var(--panel);border:1px solid var(--border);border-radius:2px;overflow:hidden;transform:translateY(20px) scale(0.97);transition:transform 0.25s cubic-bezier(0.16,1,0.3,1);position:relative}
+.modal-overlay.open .modal{transform:translateY(0) scale(1)}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--border);background:var(--panel2)}
+.modal-title{font-family:var(--display);font-size:17px;letter-spacing:0.1em}
+.modal-close{background:none;border:1px solid var(--border);border-radius:2px;color:var(--muted);cursor:pointer;font-family:var(--mono);font-size:10px;padding:4px 8px;transition:color 0.15s}
+.modal-close:hover{color:var(--text);border-color:var(--border-hi)}
+.modal-body{padding:22px}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.modal-field{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:2px;padding:11px 14px}
+.modal-field-label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;margin-bottom:5px}
+.modal-field-val{font-family:var(--mono);font-size:12px;color:var(--text)}
+.modal-payload{background:rgba(255,45,85,0.04);border:1px solid rgba(255,45,85,0.15);border-radius:2px;padding:14px;margin-bottom:16px}
+.modal-payload-label{font-family:var(--mono);font-size:9px;color:var(--red);letter-spacing:0.12em;margin-bottom:7px}
+.modal-payload-val{font-family:var(--mono);font-size:12px;color:var(--text);word-break:break-all;line-height:1.6}
+.modal-section-label{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.12em;margin-bottom:8px}
+.reasoning-step{display:flex;gap:10px;align-items:flex-start;margin-bottom:7px}
+.rs-icon{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;font-family:var(--mono);margin-top:1px}
+.rs-icon.match{background:rgba(255,45,85,0.15);color:var(--red)}
+.rs-icon.ok{background:rgba(48,209,88,0.15);color:var(--green)}
+.rs-text{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.6}
+.modal-mit{background:rgba(48,209,88,0.04);border:1px solid rgba(48,209,88,0.15);border-radius:2px;padding:13px;margin-top:14px}
+.modal-mit-label{font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:0.12em;margin-bottom:7px}
+.mit-item{font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.9}
+.mit-item::before{content:'→ ';color:var(--green)}
+.modal-footer{border-top:1px solid var(--border);padding:13px 22px;display:flex;justify-content:flex-end;gap:8px;background:var(--panel2)}
+.modal-btn{font-family:var(--mono);font-size:9px;letter-spacing:0.1em;padding:7px 14px;border-radius:2px;cursor:pointer;transition:all 0.15s}
+.modal-btn.sec{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.modal-btn.sec:hover{border-color:var(--border-hi);color:var(--text)}
+.modal-btn.pri{background:var(--red);border:1px solid var(--red);color:#fff}
+.modal-btn.pri:hover{background:#e0273d}
+.severity-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:2px;font-family:var(--mono);font-size:9px}
+.severity-badge.high{background:var(--red-dim);border:1px solid rgba(255,45,85,0.2);color:var(--red)}
+.severity-badge.med{background:var(--amber-dim);border:1px solid rgba(255,149,0,0.2);color:var(--amber)}
+.severity-badge.low{background:var(--blue-dim);border:1px solid rgba(0,170,255,0.2);color:var(--blue)}
+
+.statusbar{border-top:1px solid var(--border);padding:7px 28px;display:flex;align-items:center;justify-content:space-between;background:var(--panel)}
+.si{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.08em}
+.si span{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<nav class="nav">
+  <div class="nav-left">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo">H</div>
+      <div class="nav-title">HONEYPOT</div>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link" href="/">COMPILER</a>
+      <a class="nav-link active" href="/dashboard">MONITOR</a>
+      <a class="nav-link" href="/analytics">ANALYTICS</a>
+      <a class="nav-link" href="/threat-map">THREAT MAP</a>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-clock" id="clock">--:--:--</div>
+    <div class="nav-user">OP: <span id="navUser">—</span></div>
+    <button class="stealth-btn" onclick="toggleStealth()">
+      <div class="stealth-dot" id="stealthDot"></div>STEALTH
+    </button>
+    <button class="export-btn" onclick="exportLogs()">⬇ CSV</button>
+    <a class="logout-btn" href="/logout">⏻ SIGN OUT</a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="page-header">
+    <div>
+      <div class="page-title">ATTACK <em>MONITOR</em></div>
+      <div class="page-sub">// REAL-TIME INTRUSION DETECTION — CLICK ANY ROW FOR DETAILS</div>
+    </div>
+    <div class="live-chip"><div class="live-dot"></div>LIVE · AUTO-REFRESH 3s</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card red"><div class="stat-label">// TOTAL ATTACKS</div><div class="stat-value" id="total">0</div><div class="stat-delta" id="totalDelta">—</div></div>
+    <div class="stat-card red"><div class="stat-label">// SQL INJECTION</div><div class="stat-value" id="sql">0</div><div class="stat-delta">PATTERN MATCHED</div></div>
+    <div class="stat-card amber"><div class="stat-label">// PATH TRAVERSAL</div><div class="stat-value" id="path">0</div><div class="stat-delta">DIR ESCALATION</div></div>
+    <div class="stat-card blue"><div class="stat-label">// SUSPICIOUS</div><div class="stat-value" id="suspicious">0</div><div class="stat-delta">UNCLASSIFIED</div></div>
+  </div>
+
+  <div class="table-panel">
+    <div class="table-header">
+      <div class="table-title">INTRUSION LOG</div>
+      <div class="table-controls">
+        <button class="pill active" onclick="setFilter('all',this)">ALL</button>
+        <button class="pill" onclick="setFilter('SQL Injection',this)">SQL</button>
+        <button class="pill" onclick="setFilter('Path Traversal',this)">PATH</button>
+        <button class="pill" onclick="setFilter('Suspicious',this)">OTHER</button>
+        <button class="clear-btn" onclick="clearLogs()">CLEAR</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:130px">TIMESTAMP</th>
+          <th>PAYLOAD</th>
+          <th style="width:155px">CLASSIFICATION</th>
+          <th style="width:120px">SEVERITY</th>
+          <th style="width:115px">SRC IP</th>
+          <th style="width:36px"></th>
+        </tr>
+      </thead>
+      <tbody id="logTable">
+        <tr><td colspan="6"><div class="empty-state"><div class="icon">⌁</div><p>AWAITING ATTACK VECTORS...</p></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="statusbar">
+  <div style="display:flex;gap:20px">
+    <div class="si">ENGINE <span>HONEYPOT v2.4</span></div>
+    <div class="si">MODE <span id="modeLabel">STANDARD</span></div>
+  </div>
+  <div style="display:flex;gap:20px">
+    <div class="si">LAST REFRESH <span id="lastRefresh">—</span></div>
+    <div class="si">RECORDS <span id="recordCount">0</span></div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">ATTACK DETAIL</div>
+      <button class="modal-close" onclick="closeModalDirect()">✕ CLOSE</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="modal-field"><div class="modal-field-label">// TIMESTAMP</div><div class="modal-field-val" id="m-time">—</div></div>
+        <div class="modal-field"><div class="modal-field-label">// SOURCE IP</div><div class="modal-field-val" id="m-ip">—</div></div>
+        <div class="modal-field"><div class="modal-field-label">// CLASSIFICATION</div><div id="m-type">—</div></div>
+        <div class="modal-field"><div class="modal-field-label">// SEVERITY SCORE</div><div id="m-sev">—</div></div>
+      </div>
+      <div class="modal-payload">
+        <div class="modal-payload-label">// RAW PAYLOAD</div>
+        <div class="modal-payload-val" id="m-payload">—</div>
+      </div>
+      <div class="modal-section-label">// CLASSIFICATION REASONING</div>
+      <div id="m-reasoning"></div>
+      <div class="modal-mit">
+        <div class="modal-mit-label">// RECOMMENDED MITIGATION</div>
+        <div id="m-mitigation"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-btn sec" onclick="closeModalDirect()">DISMISS</button>
+      <button class="modal-btn pri" onclick="blockIP()">⊘ BLOCK SOURCE IP</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentFilter='all',allLogs=[],prevTotal=0,stealthOn=false;
+const ipCache={};
+function ri(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function fakeIP(){return`${ri(10,240)}.${ri(0,255)}.${ri(0,255)}.${ri(1,254)}`}
+function getIP(k){if(!ipCache[k])ipCache[k]=fakeIP();return ipCache[k]}
+
+fetch('/whoami').then(r=>r.json()).then(d=>{if(d.user)document.getElementById('navUser').textContent=d.user.toUpperCase()}).catch(()=>{});
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8)},1000);
+
+function toggleStealth(){
+  stealthOn=!stealthOn;
+  document.body.classList.toggle('stealth',stealthOn);
+  document.getElementById('modeLabel').textContent=stealthOn?'STEALTH':'STANDARD';
+}
+function setFilter(f,el){
+  currentFilter=f;document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');renderTable(allLogs);
+}
+function classify(input){
+  if(input.includes("' OR")||input.toLowerCase().includes('select ')||input.includes("'--")||input.toLowerCase().includes('union'))return"SQL Injection";
+  if(input.includes("../")||input.includes("..\\")||input.includes('/etc/')||input.includes('/windows/'))return"Path Traversal";
+  return"Suspicious";
+}
+function severity(type){
+  if(type==="SQL Injection")return{label:"HIGH",cls:"high",score:"9.1 / 10"};
+  if(type==="Path Traversal")return{label:"MED",cls:"med",score:"6.4 / 10"};
+  return{label:"LOW",cls:"low",score:"3.2 / 10"};
+}
+function renderTable(data){
+  const table=document.getElementById("logTable");
+  const filtered=currentFilter==='all'?data:data.filter(l=>classify(l.input)===currentFilter);
+  if(!filtered.length){table.innerHTML=`<tr><td colspan="6"><div class="empty-state"><div class="icon">⌁</div><p>NO EVENTS MATCH FILTER</p></div></td></tr>`;return}
+  table.innerHTML=filtered.map((log,i)=>{
+    const type=classify(log.input);const sev=severity(type);
+    const tc=type==='SQL Injection'?'sql':type==='Path Traversal'?'path':'sus';
+    const ip=getIP(log.input+log.time);
+    const safe=log.input.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    return`<tr class="${i<2?'row-new':''}" onclick="openModal('${log.time}','${ip}','${type}','${safe}')">
+      <td class="td-time">${log.time}</td><td class="td-input">${log.input}</td>
+      <td><span class="type-badge ${tc}">${type.toUpperCase()}</span></td>
+      <td><div class="severity-wrap"><div class="severity-bar"><div class="severity-fill ${sev.cls}"></div></div><span class="severity-label">${sev.label}</span></div></td>
+      <td class="td-ip">${ip}</td><td><span class="action-icon">⌘</span></td></tr>`;
+  }).join('');
+}
+const REASONING={
+  "SQL Injection":[{cls:'match',icon:'✗',text:"DETECTED: Quote chars + logical operators (OR/AND) present"},{cls:'match',icon:'✗',text:"PATTERN: Boolean-based blind SQL injection signature matched"},{cls:'match',icon:'✗',text:"CONFIRMED: Bypasses standard parameterized query check"},{cls:'ok',icon:'✓',text:"CONTAINED: Honeypot deception layer intercepted before DB reach"}],
+  "Path Traversal":[{cls:'match',icon:'✗',text:"DETECTED: Directory traversal '../' in user input"},{cls:'match',icon:'✗',text:"PATTERN: Attempting to escape web root — filesystem access"},{cls:'match',icon:'✗',text:"TARGET: Sensitive OS files (/etc/passwd, /windows/system32)"},{cls:'ok',icon:'✓',text:"CONTAINED: Sandboxed — fake filesystem response served"}],
+  "Suspicious":[{cls:'match',icon:'✗',text:"DETECTED: Anomalous input flagged by heuristic engine"},{cls:'match',icon:'?',text:"PATTERN: Does not match known signatures — risk threshold exceeded"},{cls:'match',icon:'?',text:"CLASSIFICATION: Unconfirmed — queued for human analyst review"},{cls:'ok',icon:'✓',text:"CONTAINED: Input sanitized and logged for pattern correlation"}],
+};
+const MITIGATIONS={
+  "SQL Injection":["Use parameterized queries / prepared statements exclusively","Implement strict allowlist-based input validation","Deploy WAF with SQLi detection rule sets","Enable database query logging and real-time alerting"],
+  "Path Traversal":["Canonicalize all file paths before processing","Restrict web root — deny traversal sequences in config","Whitelist allowed file extensions and directories","Run web process with minimal filesystem privileges"],
+  "Suspicious":["Enable enhanced logging for this source IP","Apply rate limiting and CAPTCHA on this endpoint","Review raw logs for related pattern clustering","Consider temporary IP block pending further analysis"],
+};
+function openModal(time,ip,type,payload){
+  const sev=severity(type);
+  document.getElementById('m-time').textContent=time;
+  document.getElementById('m-ip').textContent=ip;
+  document.getElementById('m-payload').textContent=payload;
+  const tc=type==='SQL Injection'?'sql':type==='Path Traversal'?'path':'sus';
+  document.getElementById('m-type').innerHTML=`<span class="type-badge ${tc}">${type.toUpperCase()}</span>`;
+  document.getElementById('m-sev').innerHTML=`<span class="severity-badge ${sev.cls}">● ${sev.label} — ${sev.score}</span>`;
+  document.getElementById('m-reasoning').innerHTML=(REASONING[type]||REASONING["Suspicious"]).map(r=>`<div class="reasoning-step"><div class="rs-icon ${r.cls}">${r.icon}</div><div class="rs-text">${r.text}</div></div>`).join('');
+  document.getElementById('m-mitigation').innerHTML=(MITIGATIONS[type]||MITIGATIONS["Suspicious"]).map(m=>`<div class="mit-item">${m}</div>`).join('');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect()}
+function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open')}
+function blockIP(){alert(`IP ${document.getElementById('m-ip').textContent} flagged.\n(Implement /block endpoint in app.py)`);closeModalDirect()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModalDirect()});
+function exportLogs(){
+  if(!allLogs.length){alert('No logs to export');return}
+  const rows=[['Time','Input','Type','Severity','Source IP']];
+  allLogs.forEach(l=>{const type=classify(l.input);rows.push([l.time,l.input,type,severity(type).label,getIP(l.input+l.time)])});
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`honeypot_logs_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+function clearLogs(){allLogs=[];renderTable([]);['total','sql','path','suspicious'].forEach(id=>document.getElementById(id).textContent='0')}
+
+function loadLogs(){
+  fetch('/logs').then(r=>{
+    if(r.status===401){window.location.href='/login';return Promise.reject()}
+    return r.json();
+  }).then(data=>{
+    allLogs=data.reverse();updateCounts();
+  }).catch(()=>{});
+}
+function updateCounts(){
+  const total=allLogs.length;
+  const sql=allLogs.filter(l=>classify(l.input)==="SQL Injection").length;
+  const path=allLogs.filter(l=>classify(l.input)==="Path Traversal").length;
+  document.getElementById("total").textContent=total;
+  document.getElementById("sql").textContent=sql;
+  document.getElementById("path").textContent=path;
+  document.getElementById("suspicious").textContent=total-sql-path;
+  const delta=total-prevTotal;
+  const de=document.getElementById('totalDelta');
+  if(delta>0){de.textContent=`+${delta} NEW`;de.style.color='var(--red)'}else{de.textContent='NO NEW EVENTS';de.style.color=''}
+  prevTotal=total;
+  document.getElementById('lastRefresh').textContent=new Date().toTimeString().slice(0,8);
+  document.getElementById('recordCount').textContent=total;
+  renderTable(allLogs);
+}
+setInterval(loadLogs,3000);loadLogs();
+</script>
+</body>
+</html>

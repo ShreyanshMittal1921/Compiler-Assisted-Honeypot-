@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honeypot — Secure Access</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050507;--panel:#0c0c10;--border:#1a1a24;
+  --red:#ff2d55;--red-dim:rgba(255,45,85,0.1);
+  --amber:#ff9500;--blue:#0af;--green:#30d158;
+  --text:#e8e8f0;--muted:#44445a;
+  --mono:'Share Tech Mono',monospace;
+  --display:'Bebas Neue',sans-serif;
+  --body:'DM Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--body);overflow:hidden}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(255,45,85,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,45,85,0.025) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);
+  pointer-events:none;z-index:0}
+
+/* BOOT SCREEN */
+#boot{position:fixed;inset:0;background:var(--bg);z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;transition:opacity 0.6s ease}
+#boot.hidden{opacity:0;pointer-events:none}
+.boot-logo{font-family:var(--display);font-size:56px;letter-spacing:0.1em;color:var(--red);margin-bottom:32px;opacity:0;animation:fadeIn 0.4s 0.3s ease forwards}
+.boot-lines{width:560px;max-width:90vw}
+.boot-line{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:2;opacity:0}
+.boot-line.ok::after{content:' [OK]';color:var(--green)}
+.boot-line.warn::after{content:' [WARN]';color:var(--amber)}
+.boot-bar-wrap{margin-top:20px;width:560px;max-width:90vw;height:2px;background:var(--border)}
+.boot-bar{height:100%;width:0%;background:var(--red);transition:width 0.08s linear;box-shadow:0 0 8px var(--red)}
+@keyframes fadeIn{to{opacity:1}}
+
+.scene{position:relative;z-index:1;height:100vh;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.5s ease}
+.scene.visible{opacity:1}
+.orb{position:fixed;width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,45,85,0.06) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.12)}}
+
+.layout{display:flex;width:900px;max-width:95vw;height:520px;border:1px solid var(--border);border-radius:2px;overflow:hidden;position:relative}
+.layout::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent)}
+
+.left{flex:1;background:linear-gradient(135deg,#0a0a0e 0%,#0c0a10 100%);
+  padding:48px 40px;display:flex;flex-direction:column;justify-content:space-between;
+  border-right:1px solid var(--border);position:relative;overflow:hidden}
+.left::after{content:'';position:absolute;bottom:-80px;right:-80px;width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,45,85,0.08) 0%,transparent 70%)}
+.brand-badge{display:inline-flex;align-items:center;gap:6px;background:var(--red-dim);
+  border:1px solid rgba(255,45,85,0.2);padding:4px 10px;border-radius:2px;margin-bottom:24px}
+.brand-dot{width:5px;height:5px;background:var(--red);border-radius:50%;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.2}}
+.brand-badge span{font-family:var(--mono);font-size:9px;color:var(--red);letter-spacing:0.1em}
+.left-title{font-family:var(--display);font-size:52px;line-height:1;letter-spacing:0.05em}
+.left-title em{color:var(--red);font-style:normal}
+.left-sub{margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.08em;line-height:1.8}
+.features{display:flex;flex-direction:column;gap:10px}
+.feature{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.feature-icon{width:6px;height:6px;border:1px solid var(--red);transform:rotate(45deg);flex-shrink:0}
+
+.right{width:360px;background:var(--panel);padding:40px 36px;display:flex;flex-direction:column;justify-content:center}
+.form-title{font-family:var(--display);font-size:28px;letter-spacing:0.1em;margin-bottom:4px}
+.form-sub{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:0.1em;margin-bottom:32px}
+.field{margin-bottom:18px}
+.field-label{font-family:var(--mono);font-size:9px;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
+.field-wrap{position:relative}
+.field-input{width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  border-radius:2px;padding:11px 14px;color:var(--text);font-family:var(--mono);font-size:12px;
+  outline:none;transition:border-color 0.2s,background 0.2s}
+.field-input:focus{border-color:var(--red);background:rgba(255,45,85,0.04)}
+.field-input::placeholder{color:var(--muted)}
+.toggle-pw{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;
+  font-family:var(--mono);transition:color 0.15s}
+.toggle-pw:hover{color:var(--text)}
+
+.creds-hint{background:rgba(0,170,255,0.05);border:1px solid rgba(0,170,255,0.15);
+  border-radius:2px;padding:10px 12px;margin-bottom:20px;
+  font-family:var(--mono);font-size:10px;color:#0af;line-height:1.7}
+.creds-hint strong{color:var(--text)}
+
+.btn-login{width:100%;padding:13px;background:var(--red);border:none;border-radius:2px;
+  color:#fff;font-family:var(--display);font-size:22px;letter-spacing:0.1em;cursor:pointer;
+  position:relative;overflow:hidden;transition:background 0.2s,transform 0.1s}
+.btn-login::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);
+  transform:translateX(-100%);transition:transform 0.4s}
+.btn-login:hover{background:#e0273d;transform:translateY(-1px)}
+.btn-login:hover::before{transform:translateX(100%)}
+.btn-login:active{transform:translateY(0)}
+.btn-login:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+
+.login-status{margin-top:14px;min-height:18px;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:0.06em}
+.login-status.error{color:var(--red)}
+.login-status.ok{color:var(--green)}
+.login-status.loading{color:var(--muted)}
+
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.hint{font-family:var(--mono);font-size:9px;color:#222230;text-align:center;letter-spacing:0.06em}
+</style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+<div id="boot">
+  <div class="boot-logo">HONEYPOT</div>
+  <div class="boot-lines" id="bootLines"></div>
+  <div class="boot-bar-wrap"><div class="boot-bar" id="bootBar"></div></div>
+</div>
+
+<div class="orb"></div>
+<div class="scene" id="scene">
+  <div class="layout">
+    <div class="left">
+      <div>
+        <div class="brand-badge"><div class="brand-dot"></div><span>SYSTEM SECURE</span></div>
+        <div class="left-title">DECEPTION<br>ENGINE <em>V2</em></div>
+        <div class="left-sub">// HONEYPOT COMPILATION SYSTEM<br>// INTRUSION DETECTION ACTIVE<br>// AES-256 SESSION ENCRYPTION</div>
+      </div>
+      <div class="features">
+        <div class="feature"><div class="feature-icon"></div>REAL-TIME ATTACK VECTOR CLASSIFICATION</div>
+        <div class="feature"><div class="feature-icon"></div>SQL INJECTION & PATH TRAVERSAL DETECTION</div>
+        <div class="feature"><div class="feature-icon"></div>DECEPTION-WRAPPED BINARY COMPILATION</div>
+        <div class="feature"><div class="feature-icon"></div>LIVE THREAT MAP & ANALYTICS DASHBOARD</div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="form-title">SECURE ACCESS</div>
+      <div class="form-sub">// AUTHORIZED PERSONNEL ONLY</div>
+
+      <!-- DEMO CREDENTIALS HINT -->
+      <div class="creds-hint">
+        Demo credentials:<br>
+        <strong>Username:</strong> admin &nbsp;|&nbsp; <strong>Password:</strong> honeypot123
+      </div>
+
+      <div class="field">
+        <div class="field-label">// OPERATOR ID</div>
+        <div class="field-wrap">
+          <input class="field-input" id="username" type="text" placeholder="Enter operator ID" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">// ACCESS KEY</div>
+        <div class="field-wrap">
+          <input class="field-input" id="password" type="password" placeholder="••••••••••••" autocomplete="off">
+          <button class="toggle-pw" onclick="togglePw()" id="toggleBtn">SHOW</button>
+        </div>
+      </div>
+
+      <button class="btn-login" onclick="doLogin()" id="loginBtn">AUTHENTICATE</button>
+      <div class="login-status" id="loginStatus"></div>
+
+      <hr class="divider">
+      <div class="hint">SESSION DATA STORED IN SERVER-SIDE FLASK SESSION COOKIE</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── BOOT SEQUENCE ────────────────────────────────────────────────────────────
+const lines=[
+  {text:'INITIALIZING HONEYPOT KERNEL v2.4.1',cls:'ok'},
+  {text:'LOADING DECEPTION LAYER MODULES',cls:'ok'},
+  {text:'BINDING INTRUSION DETECTION ENGINE',cls:'ok'},
+  {text:'ESTABLISHING SECURE ENCLAVE',cls:'ok'},
+  {text:'UNKNOWN PROCESS DETECTED IN MEMORY',cls:'warn'},
+  {text:'SANDBOXING ANOMALY — CONTAINED',cls:'ok'},
+  {text:'MOUNTING ENCRYPTED LOG PARTITION',cls:'ok'},
+  {text:'THREAT FEED SYNC: 2,847 SIGNATURES LOADED',cls:'ok'},
+  {text:'HONEYPOT TRAPS ARMED AND READY',cls:'ok'},
+  {text:'AWAITING OPERATOR AUTHENTICATION...',cls:''},
+];
+const container=document.getElementById('bootLines');
+const bar=document.getElementById('bootBar');
+let li=0;
+function showLine(){
+  if(li>=lines.length){setTimeout(endBoot,400);return}
+  const d=document.createElement('div');
+  d.className='boot-line'+(lines[li].cls?' '+lines[li].cls:'');
+  d.textContent=lines[li].text;
+  d.style.opacity='1';
+  container.appendChild(d);
+  bar.style.width=((li+1)/lines.length*100)+'%';
+  li++;
+  setTimeout(showLine,li<6?180:120);
+}
+function endBoot(){
+  document.getElementById('boot').classList.add('hidden');
+  document.getElementById('scene').classList.add('visible');
+  document.getElementById('username').focus();
+}
+setTimeout(showLine,400);
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+function togglePw(){
+  const pw=document.getElementById('password');
+  const btn=document.getElementById('toggleBtn');
+  pw.type=pw.type==='password'?'text':'password';
+  btn.textContent=pw.type==='password'?'SHOW':'HIDE';
+}
+
+async function doLogin(){
+  const username=document.getElementById('username').value.trim();
+  const password=document.getElementById('password').value.trim();
+  const st=document.getElementById('loginStatus');
+  const btn=document.getElementById('loginBtn');
+
+  if(!username||!password){
+    st.className='login-status error';
+    st.textContent='⚠ OPERATOR ID AND ACCESS KEY REQUIRED';
+    return;
+  }
+
+  btn.disabled=true;
+  st.className='login-status loading';
+  st.textContent='AUTHENTICATING...';
+
+  try{
+    const res=await fetch('/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username,password})
+    });
+    const data=await res.json();
+
+    if(res.ok && data.status==='ok'){
+      st.className='login-status ok';
+      st.textContent='✓ ACCESS GRANTED — LOADING DASHBOARD';
+      setTimeout(()=>{window.location.href='/dashboard'},800);
+    } else {
+      st.className='login-status error';
+      st.textContent='⚠ '+(data.message||'INVALID CREDENTIALS');
+      btn.disabled=false;
+    }
+  } catch(e){
+    st.className='login-status error';
+    st.textContent='⚠ CONNECTION ERROR — TRY AGAIN';
+    btn.disabled=false;
+  }
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+</script>
+</body>
+</html>
