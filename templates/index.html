@@ -248,9 +248,20 @@ async function uploadFile(){
   try{
     const res=await fetch('/compile',{method:'POST',body:formData});
     if(res.status===401){window.location.href='/login';return}
+    
+    const data=await res.json();
     clearInterval(tick);
-    progressBar.style.width='100%';
     statusBar.classList.remove('loading');
+
+    if(res.status!==200) {
+      progressBar.style.background='var(--amber)';
+      status.innerText='⚠ COMPILER ERROR: ' + (data.message ? data.message.toUpperCase() : 'UNKNOWN ERROR');
+      status.style.color='var(--amber)';
+      btn.disabled=false;
+      return;
+    }
+
+    progressBar.style.width='100%';
     status.innerText='✓ COMPILATION COMPLETE — REDIRECTING TO DASHBOARD';
     status.style.color='var(--green)';
     setTimeout(()=>{window.location.href='/dashboard'},1000);

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 import os
 import json
 from compiler import compile_code
+from lexer import CompilerSyntaxError
 
 app = Flask(__name__)
 
@@ -85,7 +86,20 @@ def compile_file():
     file = request.files['file']
     path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(path)
-    compile_code(path)
+    
+    try:
+        compile_code(path)
+    except CompilerSyntaxError as e:
+        return jsonify({
+            "status": "error",
+            "message": f"{e.message} at line {e.line}"
+        }), 400
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+        
     return jsonify({"status": "success"})
 
 @app.route('/logs')

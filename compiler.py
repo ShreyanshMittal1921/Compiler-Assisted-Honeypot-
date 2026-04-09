@@ -1,10 +1,12 @@
 from honeypot_engine import inject_honeypot
+from lexer import CompilerSyntaxError
 
 def compile_code(input_file):
     with open(input_file, "r", encoding="utf-8") as f:
-        code = f.readlines()
+        code_string = f.read()
 
-    modified_code = inject_honeypot(code)
+    # The lexer inside will throw CompilerSyntaxError if syntax is malformed
+    modified_code = inject_honeypot(code_string)
 
     # Add dummy login function at top
     dummy_function = '''
