@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import os
 import json
+import random
 from compiler import compile_code
 from lexer import CompilerSyntaxError
+from logger import log_attack
 
 app = Flask(__name__)
 
@@ -51,6 +53,12 @@ def threat_map():
         return redirect(url_for('login'))
     return render_template('threat-map.html')
 
+@app.route('/pipeline')
+def pipeline_view():
+    if not logged_in():
+        return redirect(url_for('login'))
+    return render_template('pipeline.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # Already logged in → skip to dashboard
@@ -88,7 +96,7 @@ def compile_file():
     file.save(path)
     
     try:
-        compile_code(path)
+        trace_data = compile_code(path)
     except CompilerSyntaxError as e:
         return jsonify({
             "status": "error",
@@ -100,7 +108,7 @@ def compile_file():
             "message": str(e)
         }), 500
         
-    return jsonify({"status": "success"})
+    return jsonify({"status": "success", "trace": trace_data})
 
 @app.route('/logs')
 def get_logs():
@@ -120,6 +128,57 @@ def whoami():
         return jsonify({"user": session['user']})
     return jsonify({"user": None}), 401
 
+
+@app.route('/api/simulate', methods=['POST'])
+def simulate_traffic():
+    if not logged_in():
+        return jsonify({"status": "unauthorized"}), 401
+    
+    attack_payloads = [
+        "' OR '1'='1",
+        "admin'--",
+        "../../../../etc/passwd",
+        "<script>alert(1)</script>",
+        "UNION SELECT null, version()",
+        "/windows/system32/cmd.exe",
+        "1; DROP TABLE users",
+        "admin' OR 1=1#"
+    ]
+    
+    num_attacks = random.randint(2, 4)
+    selected_attacks = random.sample(attack_payloads, num_attacks)
+    
+    for payload in selected_attacks:
+        log_attack(payload)
+        
+    return jsonify({"status": "success", "count": num_attacks})
+
+@app.route('/api/delete_log', methods=['POST'])
+def delete_log():
+    if not logged_in():
+        return jsonify({"status": "unauthorized"}), 401
+        
+    data = request.get_json(silent=True) or {}
+    target_time = data.get('time')
+    target_input = data.get('input')
+    
+    if not target_time or not target_input:
+        return jsonify({"status": "error", "message": "Missing log identifiers"}), 400
+        
+    LOG_FILE = "logs.json"
+    try:
+        with open(LOG_FILE, 'r', encoding='utf-8') as f:
+            logs = json.load(f)
+            
+        # Filter out the matching log (returns all logs that DON'T match)
+        updated_logs = [log for log in logs if not (log.get("time") == target_time and log.get("input") == target_input)]
+        
+        with open(LOG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(updated_logs, f, indent=4)
+            
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 # ─── RUN ─────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':

@@ -262,9 +262,10 @@ async function uploadFile(){
     }
 
     progressBar.style.width='100%';
-    status.innerText='✓ COMPILATION COMPLETE — REDIRECTING TO DASHBOARD';
+    status.innerText='✓ COMPILED. REDIRECTING TO PIPELINE DIAGNOSTICS...';
     status.style.color='var(--green)';
-    setTimeout(()=>{window.location.href='/dashboard'},1000);
+    if (data.trace) sessionStorage.setItem('compilerTrace', JSON.stringify(data.trace));
+    setTimeout(()=>{window.location.href='/pipeline'},1000);
   } catch(e){
     clearInterval(tick);
     statusBar.classList.remove('loading');

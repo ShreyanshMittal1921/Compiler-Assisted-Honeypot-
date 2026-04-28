@@ -187,6 +187,7 @@ tbody tr:hover .action-icon{opacity:0.8}
     <button class="stealth-btn" onclick="toggleStealth()">
       <div class="stealth-dot" id="stealthDot"></div>STEALTH
     </button>
+    <button class="export-btn" onclick="simulateTraffic()" id="simBtn" style="color:var(--blue);border-color:var(--blue);font-weight:bold;">▶ SIMULATE TRAFFIC</button>
     <button class="export-btn" onclick="exportLogs()">⬇ CSV</button>
     <a class="logout-btn" href="/logout">⏻ SIGN OUT</a>
   </div>
@@ -275,6 +276,7 @@ tbody tr:hover .action-icon{opacity:0.8}
       </div>
     </div>
     <div class="modal-footer">
+      <button class="modal-btn sec" style="color:var(--amber); border-color:var(--amber);" onclick="deleteCurrentLog()">⚠ DELETE LOG</button>
       <button class="modal-btn sec" onclick="closeModalDirect()">DISMISS</button>
       <button class="modal-btn pri" onclick="blockIP()">⊘ BLOCK SOURCE IP</button>
     </div>
@@ -335,8 +337,15 @@ const MITIGATIONS={
   "Path Traversal":["Canonicalize all file paths before processing","Restrict web root — deny traversal sequences in config","Whitelist allowed file extensions and directories","Run web process with minimal filesystem privileges"],
   "Suspicious":["Enable enhanced logging for this source IP","Apply rate limiting and CAPTCHA on this endpoint","Review raw logs for related pattern clustering","Consider temporary IP block pending further analysis"],
 };
+
+let currentModalTime = null;
+let currentModalInput = null;
+
 function openModal(time,ip,type,payload){
   const sev=severity(type);
+  currentModalTime = time;
+  currentModalInput = payload.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'"); // unescape for backend match
+  
   document.getElementById('m-time').textContent=time;
   document.getElementById('m-ip').textContent=ip;
   document.getElementById('m-payload').textContent=payload;
@@ -348,8 +357,29 @@ function openModal(time,ip,type,payload){
   document.getElementById('modalOverlay').classList.add('open');
 }
 function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect()}
-function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open')}
+function closeModalDirect(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  currentModalTime = null;
+  currentModalInput = null;
+}
 function blockIP(){alert(`IP ${document.getElementById('m-ip').textContent} flagged.\n(Implement /block endpoint in app.py)`);closeModalDirect()}
+
+function deleteCurrentLog() {
+  if (!currentModalTime || !currentModalInput) return;
+  fetch('/api/delete_log', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ time: currentModalTime, input: currentModalInput })
+  }).then(r => r.json()).then(data => {
+    if (data.status === 'success') {
+      closeModalDirect();
+      loadLogs();
+    } else {
+      alert("Error deleting log: " + data.message);
+    }
+  }).catch(e => alert("Connection error"));
+}
+
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModalDirect()});
 function exportLogs(){
   if(!allLogs.length){alert('No logs to export');return}
@@ -359,6 +389,33 @@ function exportLogs(){
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download=`honeypot_logs_${new Date().toISOString().slice(0,10)}.csv`;a.click();
 }
+
+function simulateTraffic(){
+  const btn = document.getElementById('simBtn');
+  const ogText = btn.innerHTML;
+  btn.innerHTML = "SIMULATING...";
+  btn.style.opacity = "0.5";
+  btn.disabled = true;
+  
+  fetch('/api/simulate', {method: 'POST'})
+    .then(r => r.json())
+    .then(() => {
+      loadLogs();
+      setTimeout(() => { 
+        btn.innerHTML = ogText; 
+        btn.style.opacity = "1";
+        btn.disabled = false; 
+      }, 800);
+    }).catch(() => {
+      btn.innerHTML = "ERROR";
+      setTimeout(() => { 
+        btn.innerHTML = ogText; 
+        btn.style.opacity = "1";
+        btn.disabled = false; 
+      }, 1000);
+    });
+}
+
 function clearLogs(){allLogs=[];renderTable([]);['total','sql','path','suspicious'].forEach(id=>document.getElementById(id).textContent='0')}
 
 function loadLogs(){

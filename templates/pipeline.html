@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honeypot — Pipeline Diagnostics</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050507;--panel:#0c0c10;--border:#1a1a24;--border-hi:#2a2a3a;
+  --red:#ff2d55;--red-dim:rgba(255,45,85,0.1);
+  --amber:#ff9500;--blue:#0af;--green:#30d158;
+  --text:#e8e8f0;--muted:#44445a;
+  --mono:'Share Tech Mono',monospace;
+  --display:'Bebas Neue',sans-serif;
+  --body:'DM Sans',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--body)}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(255,45,85,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,45,85,0.025) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0}
+
+/* ── NAV ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:56px;
+  border-bottom:1px solid var(--border);background:rgba(5,5,7,0.88);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:20}
+.nav-left{display:flex;align-items:center;gap:24px}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo{width:28px;height:28px;border:1px solid var(--red);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:14px;color:var(--red)}
+.nav-title{font-family:var(--display);font-size:18px;letter-spacing:0.1em;color:var(--text)}
+.nav-links{display:flex;gap:0}
+.nav-link{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--muted);
+  padding:6px 14px;border-radius:2px;cursor:pointer;transition:color 0.15s;text-decoration:none;}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--red);background:var(--red-dim)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-user{font-family:var(--mono);font-size:10px;color:var(--muted);padding:4px 10px;border:1px solid var(--border);border-radius:2px}
+.nav-user span{color:var(--text)}
+
+/* ── PAGE ── */
+.page{position:relative;z-index:1;min-height:calc(100vh - 56px);
+  display:flex;align-items:center;justify-content:center;padding:40px 20px; flex-direction: column}
+
+.card{width:600px;background:var(--panel);border:1px solid var(--border);border-radius:2px;
+  padding:0;position:relative;overflow:hidden;animation:cardIn 0.5s cubic-bezier(0.16,1,0.3,1) both;z-index:1}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+.card-header{padding:20px 36px;border-bottom:1px solid var(--border); display: flex; justify-content: space-between; align-items: center;}
+.card-header-title {font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--red)}
+
+.terminal{padding:28px 36px; font-family:var(--mono); min-height: 350px;}
+.trace-block {margin-bottom: 24px; opacity: 0; animation: fadeIn 0.3s forwards;}
+@keyframes fadeIn{to{opacity:1}}
+
+.phase-title {font-size: 14px; color: var(--blue); margin-bottom: 6px;}
+.phase-detail {font-size: 12px; color: var(--text); padding-left: 14px; border-left: 1px solid var(--border-hi);}
+
+.phase-output {
+    margin-top: 10px;
+    margin-left: 14px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-size: 11px;
+    color: #a0a0b5;
+    overflow-x: auto;
+    white-space: pre;
+    max-height: 250px;
+    overflow-y: auto;
+}
+.phase-output::-webkit-scrollbar { height: 4px; width: 4px; }
+.phase-output::-webkit-scrollbar-track { background: transparent; }
+.phase-output::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+.cursor {display: inline-block; width: 8px; height: 14px; background: var(--red); animation: blink 1s infinite;}
+@keyframes blink {0%, 49% {opacity: 1} 50%, 100% {opacity: 0}}
+
+.finish-area {margin-top: 30px; text-align: center; opacity: 0; transition: opacity 0.5s;}
+.finish-area.show {opacity: 1;}
+
+.btn-proceed{display:inline-block; padding:12px 24px;background:transparent;color:var(--red);
+  border:1px solid var(--red);border-radius:2px;font-family:var(--display);font-size:18px;letter-spacing:0.1em;
+  cursor:pointer;text-decoration:none;transition:all 0.2s}
+.btn-proceed:hover{background:var(--red-dim);box-shadow: 0 0 12px var(--red-dim)}
+
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-left">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo">H</div>
+      <div class="nav-title">HONEYPOT</div>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link active" href="/">COMPILER</a>
+      <a class="nav-link" href="/dashboard">MONITOR</a>
+      <a class="nav-link" href="/analytics">ANALYTICS</a>
+      <a class="nav-link" href="/threat-map">THREAT MAP</a>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-user">OPERATOR: <span id="navUser">—</span></div>
+    <a class="nav-link" style="border:1px solid var(--border)" href="/logout">⏻ SIGN OUT</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-title">LIVE COMPILE TRACE PIPELINE</div>
+      <div class="card-header-title" style="color:var(--muted)">COMPILER STAGE OUTPUTS</div>
+    </div>
+    
+    <div class="terminal" id="terminal">
+      <div id="output"></div>
+      <div class="cursor" id="cursor"></div>
+    </div>
+  </div>
+  
+  <div class="finish-area" id="finishArea">
+    <a href="/dashboard" class="btn-proceed">PROCEED TO DASHBOARD →</a>
+  </div>
+</div>
+
+<script>
+fetch('/whoami').then(r=>r.json()).then(d=>{
+  if(d.user) document.getElementById('navUser').textContent=d.user.toUpperCase();
+}).catch(()=>{});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const rawTrace = sessionStorage.getItem('compilerTrace');
+    const output = document.getElementById('output');
+    const cursor = document.getElementById('cursor');
+    const finishArea = document.getElementById('finishArea');
+
+    if (!rawTrace) {
+        output.innerHTML = "<div style='color:var(--amber)'>⚠ NO TRACE DATA FOUND IN SYSTEM STORAGE. PLEASE COMPILE A FILE.</div>";
+        finishArea.classList.add('show');
+        return;
+    }
+
+    let trace = [];
+    try {
+        trace = JSON.parse(rawTrace);
+    } catch(e) {
+        output.innerHTML = "<div style='color:var(--amber)'>⚠ CORRUPTED TRACE DATA</div>";
+        return;
+    }
+
+    let i = 0;
+    
+    function showNextStep() {
+        if (i >= trace.length) {
+            cursor.style.display = 'none';
+            finishArea.classList.add('show');
+            return;
+        }
+
+        const step = trace[i];
+        
+        const block = document.createElement('div');
+        block.className = 'trace-block';
+        
+        const phaseDiv = document.createElement('div');
+        phaseDiv.className = 'phase-title';
+        phaseDiv.innerText = step.phase;
+        
+        const detailDiv = document.createElement('div');
+        detailDiv.className = 'phase-detail';
+        detailDiv.innerText = step.detail;
+        
+        block.appendChild(phaseDiv);
+        block.appendChild(detailDiv);
+        
+        if (step.output) {
+            const outputDiv = document.createElement('div');
+            outputDiv.className = 'phase-output';
+            outputDiv.innerText = step.output;
+            block.appendChild(outputDiv);
+        }
+        
+        output.appendChild(block);
+        
+        i++;
+        
+        // Artificial delay of 800ms per step to visualize the process
+        setTimeout(showNextStep, 800);
+    }
+
+    // Start sequence
+    setTimeout(showNextStep, 500);
+});
+</script>
+
+</body>
+</html>

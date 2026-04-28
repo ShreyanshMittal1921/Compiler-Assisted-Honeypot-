@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+logs.json
+compiler_steps/
+uploads/

@@ -1,12 +1,17 @@
-# 🍯 Honeypot Compiler — Setup & Documentation
+# 🍯 Honeypot Compiler — Compiler Design & Security Pipeline
 
 ## Project Structure
 
 ```
 honeypot/
 ├── app.py                  ← Flask backend (routes, auth, API)
-├── compiler.py             ← Compiles uploaded Python files
-├── honeypot_engine.py      ← Injects honeypot traps into code
+├── compiler.py             ← Main Compiler Core (Lexer, Parser, AST, Codegen)
+├── lexer.py                ← Phase 1: Lexical Analysis
+├── parser.py               ← Phase 2: Syntax Analysis & AST Generation
+├── semantic.py             ← Phase 3: Semantic Analysis & Symbol Tables
+├── optimizer.py            ← Phase 4: AST Dead Code Elimination
+├── transformer.py          ← Phase 5: Instrumentation (Honeypot Logic)
+├── codegen.py              ← Phase 6: Code Generation
 ├── logger.py               ← Logs attack data to logs.json
 ├── logs.json               ← Auto-created, stores all attack logs
 ├── output_program.py       ← Auto-created after compilation
@@ -14,6 +19,7 @@ honeypot/
 └── templates/
     ├── login.html          ← Auth page (boot sequence + login form)
     ├── index.html          ← Compiler upload page
+    ├── pipeline.html       ← Live pipeline showing all Compiler output steps
     ├── dashboard.html      ← Live attack monitor + detail modal
     ├── analytics.html      ← Charts, heatmap, payload rankings
     └── threat-map.html     ← Animated live global threat map
@@ -84,16 +90,28 @@ Every page has:
 
 ### ⚙️ Compiler
 - Upload any `.py` file
-- Animated multi-step progress bar
-- Redirects to Dashboard after compile
-- Honeypot traps injected around `login` calls
+- Fully simulates a **compiler toolchain** implementing the following phases:
+  1. **Lexical Analysis:** Tokenizes raw source code.
+  2. **Parsing:** Implements a recursive descent parser to build an AST framework.
+  3. **Semantic Analysis:** Extracts variables and creates a Symbol Table.
+  4. **AST Optimization:** Eliminates dead code (DCE logic).
+  5. **AST Transformation:** Walks the AST to instrument 'login' methods with honeypot captures.
+  6. **Code Generation:** Flattens AST back to executable Python code.
+- Captures the exact output of every distinct compilation phase.
+- Seamless re-direction to the Pipeline to observe these steps dynamically.
+
+### 🔍 Execution Pipeline Viewer (/pipeline)
+- A dedicated diagnostic UI.
+- Visually stepping through **Lexer** dumps, **AST structures**, **Symbol tables**, and **Final emitted code** in real-time.
 
 ### 📊 Dashboard (Attack Monitor)
-- Live log table, auto-refreshes every 3s from `/logs`
+- Live log table, auto-refreshes every 3s from `logs.json`.
+- **Simulate Traffic:** A dedicated button to inject realistic randomized simulated attack payloads in the dashboard without manual terminal intervention.
 - **Click any row** → detailed modal with:
   - Raw payload, source IP, classification
   - Step-by-step reasoning
   - Recommended mitigations
+- **Log Management:** Delete logs directly from the modal view.
 - Filter by SQL / Path / Suspicious
 - Export logs as CSV
 - **Stealth mode** toggle (dims UI)
@@ -113,14 +131,15 @@ Every page has:
 
 ---
 
-## How the Honeypot Works
+## How the Compiler Works
 
-1. User uploads a `.py` source file
-2. `compiler.py` reads it line by line
-3. `honeypot_engine.py` detects any line containing `"login"`
-4. A trap is injected after that line — it captures user input
-5. `logger.py` saves the captured data to `logs.json`
-6. Dashboard reads `logs.json` every 3 seconds and displays attacks
+1. User uploads a source file (like the provided `example_login_script.py`).
+2. `compiler.py` orchestrates the translation through 6 strict Compiler Phases.
+3. Tokens, grammatically validated ASTs, and strict optimization metrics are generated.
+4. During Phase 5 (Transformation), an implicit Honeypot Trap is woven into AST scope.
+5. Code Generation builds an altered output variant.
+6. The compiled results display securely in the dashboard.
+7. Generating simulated traffic via the dashboard will populate the intrusion logs securely.
 
 ---
 
