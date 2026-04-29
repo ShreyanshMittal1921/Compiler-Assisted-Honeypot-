@@ -1,10 +1,9 @@
 def login(username, password):
-    if locals().get("username") == "admin" or locals().get("user") == "admin":
-        print("Honeypot Active")
-        user_input = input("Enter value: ")
-        print("You entered:", user_input)
-        from logger import log_attack
-        log_attack(user_input)
+        # [INJECTED BY AST TRANSFORMER] Honeypot Telemetry
+        import sys; from logger import log_attack
+        if locals().get("username") == "admin" or locals().get("user") == "admin":
+            payload = sys.argv[-1] if len(sys.argv) > 1 else "Unknown vector"
+            log_attack(payload)
     # This is a honeypot target function
     print("Welcome " + username)
     secret_token = "admin123"
