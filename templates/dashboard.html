@@ -209,6 +209,17 @@ tbody tr:hover .action-icon{opacity:0.8}
     <div class="stat-card blue"><div class="stat-label">// SUSPICIOUS</div><div class="stat-value" id="suspicious">0</div><div class="stat-delta">UNCLASSIFIED</div></div>
   </div>
 
+  <div class="table-panel" style="margin-bottom: 20px;">
+    <div class="table-header">
+      <div class="table-title">MANUAL ATTACK SIMULATION</div>
+    </div>
+    <div style="padding: 14px 22px; display: flex; gap: 10px;">
+      <input type="text" id="manualAttackInput" placeholder="Enter payload (e.g. ' OR 1=1) to test detection..." style="flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: var(--text); padding: 10px; font-family: var(--mono); border-radius: 2px;">
+      <button class="export-btn" onclick="sendManualAttack()" style="color:var(--red);border-color:var(--red);font-size:11px;padding:10px 20px;">FIRE PAYLOAD</button>
+    </div>
+    <div id="attackResult" style="padding: 0 22px 14px 22px; font-family: var(--mono); font-size: 11px; color: var(--text);"></div>
+  </div>
+
   <div class="table-panel">
     <div class="table-header">
       <div class="table-title">INTRUSION LOG</div>
@@ -414,6 +425,34 @@ function simulateTraffic(){
         btn.disabled = false; 
       }, 1000);
     });
+}
+
+function sendManualAttack() {
+  const input = document.getElementById('manualAttackInput').value.trim();
+  if (!input) return;
+  fetch('/api/test_attack', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input: input })
+  }).then(r => r.json()).then(data => {
+    const resDiv = document.getElementById('attackResult');
+    if (data.status === 'success') {
+      document.getElementById('manualAttackInput').value = '';
+      if (data.message === "No harm detected.") {
+        resDiv.innerHTML = `<span style="color: var(--green);">[OK] ${data.message}</span>`;
+      } else {
+        resDiv.innerHTML = `<span style="color: var(--red);">[ALERT] ${data.message}</span>`;
+      }
+      setTimeout(() => resDiv.innerHTML = '', 4000);
+      loadLogs();
+    } else {
+      resDiv.innerHTML = `<span style="color: var(--amber);">[ERROR] ${data.message}</span>`;
+      setTimeout(() => resDiv.innerHTML = '', 4000);
+    }
+  }).catch(e => {
+    document.getElementById('attackResult').innerHTML = `<span style="color: var(--amber);">[ERROR] Connection error</span>`;
+    setTimeout(() => document.getElementById('attackResult').innerHTML = '', 4000);
+  });
 }
 
 function clearLogs(){allLogs=[];renderTable([]);['total','sql','path','suspicious'].forEach(id=>document.getElementById(id).textContent='0')}

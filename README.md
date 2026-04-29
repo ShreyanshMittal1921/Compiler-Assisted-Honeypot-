@@ -89,7 +89,7 @@ Every page has:
 - Wrong credentials → error message
 
 ### ⚙️ Compiler
-- Upload any `.py` file
+- Upload any `.py` file **or write Python code directly in the browser editor**.
 - Fully simulates a **compiler toolchain** implementing the following phases:
   1. **Lexical Analysis:** Tokenizes raw source code.
   2. **Parsing:** Implements a recursive descent parser to build an AST framework.
@@ -101,12 +101,15 @@ Every page has:
 - Seamless re-direction to the Pipeline to observe these steps dynamically.
 
 ### 🔍 Execution Pipeline Viewer (/pipeline)
-- A dedicated diagnostic UI.
+- A dedicated diagnostic UI with an enhanced, clear visual presentation.
 - Visually stepping through **Lexer** dumps, **AST structures**, **Symbol tables**, and **Final emitted code** in real-time.
 
 ### 📊 Dashboard (Attack Monitor)
 - Live log table, auto-refreshes every 3s from `logs.json`.
 - **Simulate Traffic:** A dedicated button to inject realistic randomized simulated attack payloads in the dashboard without manual terminal intervention.
+- **Manual Attack Simulation:** A text field to fire custom payloads. The system uses smart heuristics to evaluate the command:
+  - Suspicious commands (SQLi, XSS, Path Traversal) are flagged as "Suspicious command detected" and logged.
+  - Safe commands are marked as "No harm detected" and skipped.
 - **Click any row** → detailed modal with:
   - Raw payload, source IP, classification
   - Step-by-step reasoning

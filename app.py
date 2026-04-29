@@ -91,9 +91,19 @@ def logout():
 def compile_file():
     if not logged_in():
         return jsonify({"status": "unauthorized"}), 401
-    file = request.files['file']
-    path = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(path)
+    
+    file = request.files.get('file')
+    code_content = request.form.get('code')
+    
+    if code_content is not None:
+        path = os.path.join(UPLOAD_FOLDER, "temp_code.py")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(code_content)
+    elif file:
+        path = os.path.join(UPLOAD_FOLDER, file.filename)
+        file.save(path)
+    else:
+        return jsonify({"status": "error", "message": "No file or code provided"}), 400
     
     try:
         trace_data = compile_code(path)
@@ -152,6 +162,39 @@ def simulate_traffic():
         log_attack(payload)
         
     return jsonify({"status": "success", "count": num_attacks})
+
+def is_suspicious(input_str):
+    input_str_lower = input_str.lower()
+    
+    # SQL Injection patterns
+    if any(x in input_str_lower for x in ["' or", "select ", "'--", "union", "drop table", "admin'"]):
+        return True
+    
+    # Path Traversal patterns
+    if any(x in input_str_lower for x in ["../", "..\\", "/etc/", "/windows/"]):
+        return True
+        
+    # XSS or Command Injection patterns
+    if any(x in input_str_lower for x in ["<script>", "alert(", "cmd.exe", "exec("]):
+        return True
+        
+    return False
+
+@app.route('/api/test_attack', methods=['POST'])
+def test_attack():
+    if not logged_in():
+        return jsonify({"status": "unauthorized"}), 401
+    
+    data = request.get_json(silent=True) or {}
+    user_input = data.get('input', '').strip()
+    
+    if user_input:
+        if is_suspicious(user_input):
+            log_attack(user_input)
+            return jsonify({"status": "success", "message": "Suspicious command detected and logged."})
+        else:
+            return jsonify({"status": "success", "message": "No harm detected."})
+    return jsonify({"status": "error", "message": "No input provided"}), 400
 
 @app.route('/api/delete_log', methods=['POST'])
 def delete_log():
