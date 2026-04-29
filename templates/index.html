@@ -158,12 +158,24 @@ body::after{content:'';position:fixed;inset:0;
 
       <div class="card-body">
         <div class="field-label">// TARGET SOURCE FILE</div>
+        <div class="tabs" style="display:flex;gap:10px;margin-bottom:10px;">
+          <button class="qn-btn active" id="tabUpload" onclick="switchTab('upload')" style="border-color:var(--red);color:var(--text);">UPLOAD FILE</button>
+          <button class="qn-btn" id="tabCode" onclick="switchTab('code')">WRITE CODE</button>
+        </div>
+
         <div class="file-drop" id="dropZone">
           <input type="file" id="fileInput" onchange="onFileSelect(this)">
           <span class="drop-icon">⌁</span>
           <div class="drop-text"><strong>Click to upload</strong> or drag & drop</div>
           <div class="drop-text" style="font-size:11px;margin-top:4px">Any .py source file accepted</div>
           <div class="file-name" id="fileName"></div>
+        </div>
+
+        <div class="code-editor" id="codeZone" style="display:none;">
+          <textarea id="codeInput" style="width:100%;height:150px;background:var(--panel);border:1px dashed var(--border);color:var(--text);font-family:var(--mono);padding:10px;resize:vertical;border-radius:2px;" placeholder="# Write python code here...
+def login(username, password):
+    if username == 'admin':
+        print('Welcome')"></textarea>
         </div>
 
         <div class="progress-wrap" id="progressWrap">
@@ -212,17 +224,41 @@ function onFileSelect(input){
   if(input.files.length) document.getElementById('fileName').textContent='> '+input.files[0].name;
 }
 
+function switchTab(tab) {
+  if (tab === 'upload') {
+    document.getElementById('dropZone').style.display = 'block';
+    document.getElementById('codeZone').style.display = 'none';
+    document.getElementById('tabUpload').style.borderColor = 'var(--red)';
+    document.getElementById('tabUpload').style.color = 'var(--text)';
+    document.getElementById('tabCode').style.borderColor = 'var(--border)';
+    document.getElementById('tabCode').style.color = 'var(--muted)';
+  } else {
+    document.getElementById('dropZone').style.display = 'none';
+    document.getElementById('codeZone').style.display = 'block';
+    document.getElementById('tabCode').style.borderColor = 'var(--red)';
+    document.getElementById('tabCode').style.color = 'var(--text)';
+    document.getElementById('tabUpload').style.borderColor = 'var(--border)';
+    document.getElementById('tabUpload').style.color = 'var(--muted)';
+  }
+}
+
 async function uploadFile(){
   const fileInput=document.getElementById('fileInput');
+  const codeInput=document.getElementById('codeInput');
+  const isCode = document.getElementById('codeZone').style.display !== 'none';
   const status=document.getElementById('status');
   const statusBar=document.getElementById('statusBar');
   const progressWrap=document.getElementById('progressWrap');
   const progressBar=document.getElementById('progressBar');
   const btn=document.getElementById('compileBtn');
 
-  if(!fileInput.files.length){
+  if(!isCode && !fileInput.files.length){
     status.style.color='var(--amber)';
     status.innerText='⚠ SELECT A TARGET FILE FIRST';return;
+  }
+  if(isCode && !codeInput.value.trim()){
+    status.style.color='var(--amber)';
+    status.innerText='⚠ ENTER SOME CODE FIRST';return;
   }
 
   status.style.color='var(--blue)';
@@ -243,7 +279,11 @@ async function uploadFile(){
   },350);
 
   const formData=new FormData();
-  formData.append('file',fileInput.files[0]);
+  if (isCode) {
+    formData.append('code', codeInput.value);
+  } else {
+    formData.append('file', fileInput.files[0]);
+  }
 
   try{
     const res=await fetch('/compile',{method:'POST',body:formData});

@@ -43,14 +43,14 @@ body::before{content:'';position:fixed;inset:0;
 .page{position:relative;z-index:1;min-height:calc(100vh - 56px);
   display:flex;align-items:center;justify-content:center;padding:40px 20px; flex-direction: column}
 
-.card{width:600px;background:var(--panel);border:1px solid var(--border);border-radius:2px;
+.card{width:900px;background:var(--panel);border:1px solid var(--border);border-radius:2px;
   padding:0;position:relative;overflow:hidden;animation:cardIn 0.5s cubic-bezier(0.16,1,0.3,1) both;z-index:1}
 @keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 
 .card-header{padding:20px 36px;border-bottom:1px solid var(--border); display: flex; justify-content: space-between; align-items: center;}
 .card-header-title {font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--red)}
 
-.terminal{padding:28px 36px; font-family:var(--mono); min-height: 350px;}
+.terminal{padding:28px 36px; font-family:var(--mono); min-height: 500px;}
 .trace-block {margin-bottom: 24px; opacity: 0; animation: fadeIn 0.3s forwards;}
 @keyframes fadeIn{to{opacity:1}}
 
@@ -60,15 +60,15 @@ body::before{content:'';position:fixed;inset:0;
 .phase-output {
     margin-top: 10px;
     margin-left: 14px;
-    padding: 12px;
+    padding: 16px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border);
     border-radius: 2px;
-    font-size: 11px;
+    font-size: 13px;
     color: #a0a0b5;
     overflow-x: auto;
     white-space: pre;
-    max-height: 250px;
+    max-height: 350px;
     overflow-y: auto;
 }
 .phase-output::-webkit-scrollbar { height: 4px; width: 4px; }

@@ -133,8 +133,8 @@ def compile_code(input_file):
         "output": out4_str
     })
 
-    # == Phase 5: Honeypot Injection ==
-    print("[5/6] Honeypot Injection...")
+    # == Phase 5: AST Transformation (Instrumentation) ==
+    print("[5/6] AST Transformation...")
     transformer = ASTTransformer(symtab)
     modified_ast = transformer.transform(ast)
     
@@ -150,7 +150,7 @@ def compile_code(input_file):
     else:
         trans_detail = "Target 'login' not found. AST remained un-instrumented."
     trace.append({
-        "phase": "[5/6] HONEYPOT INJECTION",
+        "phase": "[5/6] AST TRANSFORMATION",
         "detail": trans_detail,
         "output": out5_str
     })
@@ -178,8 +178,8 @@ def login(user, password):
         f.write(final_output_str)
         
     trace.append({
-        "phase": "[6/6] CODE EMISSION",
-        "detail": f"Tree un-parsed. Generated {len(final_code.splitlines())} lines of source code. Saved to {output_path}",
+        "phase": "[6/6] HONEYPOT INJECTED CODE",
+        "detail": f"Tree un-parsed. Generated {len(final_code.splitlines())} lines of source code. Honeypot injected! Saved to {output_path}",
         "output": final_output_str
     })
 
