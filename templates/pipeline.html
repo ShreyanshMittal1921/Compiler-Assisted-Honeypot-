@@ -86,6 +86,18 @@ body::before{content:'';position:fixed;inset:0;
   cursor:pointer;text-decoration:none;transition:all 0.2s}
 .btn-proceed:hover{background:var(--red-dim);box-shadow: 0 0 12px var(--red-dim)}
 
+body.light {
+  --bg: #f4f4f8;
+  --panel: #ffffff;
+  --panel2: #f8f9fa;
+  --border: #e2e2e8;
+  --border-hi: #c4c4cc;
+  --text: #1a1a24;
+  --muted: #66667a;
+}
+body.light .nav {
+  background: rgba(244, 244, 248, 0.88);
+}
 </style>
 </head>
 <body>
@@ -104,6 +116,7 @@ body::before{content:'';position:fixed;inset:0;
     </div>
   </div>
   <div class="nav-right">
+    <button class="nav-link" style="border:1px solid var(--border); background:transparent;" onclick="toggleTheme()" id="themeBtn">☀ LIGHT</button>
     <div class="nav-user">OPERATOR: <span id="navUser">—</span></div>
     <a class="nav-link" style="border:1px solid var(--border)" href="/logout">⏻ SIGN OUT</a>
   </div>
@@ -195,6 +208,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start sequence
     setTimeout(showNextStep, 500);
 });
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.innerHTML = isLight ? '☾ DARK' : '☀ LIGHT';
+}
+if (localStorage.getItem('theme') === 'light') {
+  document.body.classList.add('light');
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.innerHTML = '☾ DARK';
+}
 </script>
 
 </body>

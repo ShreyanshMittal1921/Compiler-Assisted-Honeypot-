@@ -512,7 +512,19 @@
     .si span {
       color: var(--text)
     }
-  </style>
+  body.light {
+  --bg: #f4f4f8;
+  --panel: #ffffff;
+  --panel2: #f8f9fa;
+  --border: #e2e2e8;
+  --border-hi: #c4c4cc;
+  --text: #1a1a24;
+  --muted: #66667a;
+}
+body.light .nav {
+  background: rgba(244, 244, 248, 0.88);
+}
+</style>
 </head>
 
 <body>
@@ -531,6 +543,8 @@
         </div>
       </div>
       <div class="nav-right">
+        <button class="nav-link" style="border:1px solid var(--border); background:transparent;" onclick="toggleTheme()" id="themeBtn">☀ LIGHT</button>
+        <div class="nav-clock" id="clock">--:--:--</div>
         <div class="nav-user">OP: <span id="navUser">—</span></div>
         <button class="stealth-btn" onclick="document.body.classList.toggle('stealth')">
           <div class="stealth-dot"></div>STEALTH
@@ -698,7 +712,18 @@
     function scheduleArc() { spawnArc(); setTimeout(scheduleArc, ri(600, 2000)) }
     setTimeout(scheduleArc, 800);
     for (let i = 0; i < 5; i++)setTimeout(spawnArc, i * 300);
-  </script>
+  function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.innerHTML = isLight ? '☾ DARK' : '☀ LIGHT';
+}
+if (localStorage.getItem('theme') === 'light') {
+  document.body.classList.add('light');
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.innerHTML = '☾ DARK';
+}
+</script>
 </body>
 
 </html>

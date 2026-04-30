@@ -103,6 +103,18 @@ body::after{content:'';position:fixed;inset:0;
 
 .divider{border:none;border-top:1px solid var(--border);margin:16px 0}
 .hint{font-family:var(--mono);font-size:9px;color:#222230;text-align:center;letter-spacing:0.06em}
+body.light {
+  --bg: #f4f4f8;
+  --panel: #ffffff;
+  --panel2: #f8f9fa;
+  --border: #e2e2e8;
+  --border-hi: #c4c4cc;
+  --text: #1a1a24;
+  --muted: #66667a;
+}
+body.light .nav {
+  background: rgba(244, 244, 248, 0.88);
+}
 </style>
 </head>
 <body>
@@ -249,6 +261,9 @@ async function doLogin(){
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+if (localStorage.getItem('theme') === 'light') {
+  document.body.classList.add('light');
+}
 </script>
 </body>
 </html>
