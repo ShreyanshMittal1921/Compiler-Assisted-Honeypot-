@@ -41,17 +41,7 @@ def dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard.html')
 
-@app.route('/analytics')
-def analytics():
-    if not logged_in():
-        return redirect(url_for('login'))
-    return render_template('analytics.html')
 
-@app.route('/threat-map')
-def threat_map():
-    if not logged_in():
-        return redirect(url_for('login'))
-    return render_template('threat-map.html')
 
 @app.route('/pipeline')
 def pipeline_view():
@@ -225,4 +215,4 @@ def delete_log():
 
 # ─── RUN ─────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=9876)

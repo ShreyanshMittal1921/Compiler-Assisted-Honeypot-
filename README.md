@@ -20,10 +20,9 @@ honeypot/
     ├── login.html          ← Auth page (boot sequence + login form)
     ├── index.html          ← Compiler upload page
     ├── pipeline.html       ← Live pipeline showing all Compiler output steps
-    ├── dashboard.html      ← Live attack monitor + detail modal
-    ├── analytics.html      ← Charts, heatmap, payload rankings
-    └── threat-map.html     ← Animated live global threat map
+    └── dashboard.html      ← Live attack monitor + detail modal
 ```
+
 
 ---
 
@@ -67,10 +66,7 @@ http://127.0.0.1:5000
 Login ──► Compiler ──► (upload .py file)
                 │
                 ▼
-           Dashboard  ←──► Analytics
-                │
-                ▼
-           Threat Map
+           Dashboard
 ```
 
 Every page has:
@@ -119,18 +115,6 @@ Every page has:
 - Export logs as CSV
 - **Stealth mode** toggle (dims UI)
 
-### 📈 Analytics
-- 24h frequency line chart (Chart.js)
-- Attack type donut chart
-- Hourly heatmap
-- Top payloads ranking bar
-- Time filter: 1H / 6H / 24H / 7D
-
-### 🗺️ Threat Map
-- Animated SVG world map
-- Live attack arcs from source → honeypot
-- Real-time feed sidebar with IP + type
-- Top source countries ranked
 
 ---
 
